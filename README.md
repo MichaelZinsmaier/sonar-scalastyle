@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/NCR-CoDE/sonar-scalastyle.svg?branch=master)](https://travis-ci.org/NCR-CoDE/sonar-scalastyle)
 
 # Sonar Scalastyle Plugin
 
