@@ -21,7 +21,6 @@ package com.ncredinburgh.sonar.scalastyle
 import org.sonar.api.rule.Severity
 import org.sonar.api.server.rule.RulesDefinition
 import org.sonar.api.server.rule.RuleParamType
-import org.slf4j.LoggerFactory
 import org.sonar.api.server.rule.RulesDefinition.NewRepository
 import com.ncredinburgh.sonar.scalastyle.ScalastyleRepository.getStandardKey
 import scala.annotation.tailrec

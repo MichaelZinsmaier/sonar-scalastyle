@@ -18,10 +18,10 @@
  */
 package com.ncredinburgh.sonar.scalastyle
 
-import org.slf4j.LoggerFactory
 import org.sonar.api.profiles.{ProfileDefinition, RulesProfile}
 import org.sonar.api.rules.{RuleFinder, ActiveRule}
 import org.sonar.api.utils.ValidationMessages
+import org.sonar.api.utils.log.Loggers
 import org.scalastyle.ScalastyleError
 import scala.xml.XML
 import collection.JavaConversions._
@@ -33,7 +33,7 @@ import org.sonar.api.rules.Rule
  */
 class ScalastyleQualityProfile(ruleFinder: RuleFinder) extends ProfileDefinition {
 
-  private val log = LoggerFactory.getLogger(classOf[ScalastyleQualityProfile])
+  private val log = Loggers.get(classOf[ScalastyleQualityProfile])
   private val defaultConfigRules = xmlFromClassPath("/default_config.xml") \\ "scalastyle" \ "check"
 
   override def createProfile(validation: ValidationMessages): RulesProfile = {

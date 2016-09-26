@@ -18,22 +18,22 @@
  */
 package com.ncredinburgh.sonar.scalastyle
 
-import org.sonar.api.SonarPlugin
-import scala.collection.mutable.ListBuffer
-import scala.collection.JavaConversions._
-import org.sonar.api.Extension
+import org.sonar.api.Plugin
 import com.ncredinburgh.sonar.scalastyle.core.Scala
 
 /**
  * Plugin entry point.
  */
-class ScalastylePlugin extends SonarPlugin {
-  override def getExtensions: java.util.List[Class[_ <: Extension]] = ListBuffer(
-    classOf[Scala],
-    classOf[ScalastyleRepository],
-    classOf[ScalastyleQualityProfile],
-    classOf[ScalastyleSensor]
-  )
-
+class ScalastylePlugin extends Plugin {
+  
+  override def define(context: Plugin.Context) {
+    context.addExtensions(
+      classOf[Scala],
+      classOf[ScalastyleRepository],
+      classOf[ScalastyleQualityProfile],
+      classOf[ScalastyleSensor]
+    );
+  }
+  
   override val toString = getClass.getSimpleName
 }

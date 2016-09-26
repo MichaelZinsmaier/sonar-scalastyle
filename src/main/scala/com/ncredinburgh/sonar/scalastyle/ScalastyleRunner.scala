@@ -30,7 +30,7 @@ import org.scalastyle.ScalastyleChecker
 import org.scalastyle.ErrorLevel
 import org.scalastyle.ScalastyleConfiguration
 import org.scalastyle.ConfigurationChecker
-import org.slf4j.LoggerFactory
+import org.sonar.api.utils.log.Loggers
 import org.sonar.api.profiles.RulesProfile
 import org.sonar.api.rules.ActiveRule
 import scala.collection.JavaConversions._
@@ -39,7 +39,7 @@ import scala.collection.JavaConversions._
  * Runs Scalastyle based on active rules in the given RulesProfile
  */
 class ScalastyleRunner(rp: RulesProfile) {
-  private val log = LoggerFactory.getLogger(classOf[ScalastyleRunner])
+  private val log = Loggers.get(classOf[ScalastyleRunner])
 
   def run(encoding: String, files: java.util.List[File]): List[Message[FileSpec]] = {
     log.debug("Using config " + config)

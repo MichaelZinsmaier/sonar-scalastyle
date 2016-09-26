@@ -19,7 +19,7 @@
 package com.ncredinburgh.sonar.scalastyle
 
 import org.scalastyle._
-import org.slf4j.LoggerFactory
+import org.sonar.api.utils.log.Loggers
 import org.sonar.api.batch.fs.{InputFile, FileSystem}
 import org.sonar.api.batch.{Sensor, SensorContext}
 import org.sonar.api.component.ResourcePerspectives
@@ -48,7 +48,7 @@ class ScalastyleSensor(resourcePerspectives: ResourcePerspectives,
            ruleFinder: RuleFinder) = this(resourcePerspectives, new ScalastyleRunner(rulesProfile), fileSystem, ruleFinder)
 
 
-  private val log = LoggerFactory.getLogger(classOf[ScalastyleSensor])
+  private val log = Loggers.get(classOf[ScalastyleSensor])
 
   private def predicates = fileSystem.predicates()
 
