@@ -3,16 +3,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.codehaus.sonar-plugins</groupId>
-        <artifactId>parent</artifactId>
-        <version>18</version>
-    </parent>
-
     <groupId>com.ncredinburgh</groupId>
     <artifactId>sonar-scalastyle</artifactId>
+    <version>0.0.4-SNAPSHOT</version>
+    
     <packaging>sonar-plugin</packaging>
-    <version>0.0.3-SNAPSHOT</version>
 
     <name>Sonar Scalastyle Plugin</name>
     <description>Enables analysis of Scala projects with Scalastyle.</description>
@@ -27,12 +22,12 @@
     </licenses>
 
     <properties>
-        <sonar.version>4.5.5</sonar.version>
+        <sonar.version>5.6</sonar.version>
         <sonar.pluginKey>Scalastyle</sonar.pluginKey>
         <sonar.pluginName>Scalastyle</sonar.pluginName>
         <sonar.pluginClass>com.ncredinburgh.sonar.scalastyle.ScalastylePlugin</sonar.pluginClass>
 
-        <scala.version>2.11.7</scala.version>
+        <scala.version>2.11.8</scala.version>
         <scala.major.version>2.11</scala.major.version>
 
         <!-- needed? -->
@@ -43,9 +38,10 @@
 
 
         <dependency>
-            <groupId>org.codehaus.sonar</groupId>
+            <groupId>org.sonarsource.sonarqube</groupId>
             <artifactId>sonar-plugin-api</artifactId>
             <version>${sonar.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -113,7 +109,7 @@
         </dependency>
 
         <dependency>
-            <groupId>org.codehaus.sonar</groupId>
+            <groupId>org.sonarsource.sonarqube</groupId>
             <artifactId>sonar-core</artifactId>
             <version>${sonar.version}</version>
             <scope>test</scope>
@@ -135,6 +131,50 @@
                     <version>2.18.1</version>
                 </plugin>
 
+                <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+                <plugin>
+                	<groupId>org.eclipse.m2e</groupId>
+                	<artifactId>lifecycle-mapping</artifactId>
+                	<version>1.0.0</version>
+                	<configuration>
+                		<lifecycleMappingMetadata>
+                			<pluginExecutions>
+                				<pluginExecution>
+                					<pluginExecutionFilter>
+                						<groupId>
+                							com.mycila.maven-license-plugin
+                						</groupId>
+                						<artifactId>
+                							maven-license-plugin
+                						</artifactId>
+                						<versionRange>
+                							[1.9.0,)
+                						</versionRange>
+                						<goals>
+                							<goal>check</goal>
+                						</goals>
+                					</pluginExecutionFilter>
+                					<action>
+                						<ignore></ignore>
+                					</action>
+                				</pluginExecution>
+                				<pluginExecution>
+                					<pluginExecutionFilter>
+                						<groupId></groupId>
+                						<artifactId></artifactId>
+                						<versionRange>[,)</versionRange>
+                						<goals>
+                							<goal></goal>
+                						</goals>
+                					</pluginExecutionFilter>
+                					<action>
+                						<ignore></ignore>
+                					</action>
+                				</pluginExecution>
+                			</pluginExecutions>
+                		</lifecycleMappingMetadata>
+                	</configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -177,6 +217,17 @@
                     <includes>
                         <include>**/*Spec.java</include>
                     </includes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
+                <artifactId>sonar-packaging-maven-plugin</artifactId>
+                <version>1.16</version>
+                <extensions>true</extensions>
+                <configuration>
+                     <pluginClass>${sonar.pluginClass}</pluginClass>
+                     <pluginKey>${sonar.pluginKey}</pluginKey>
+                     <pluginName>${sonar.pluginName}</pluginName>
                 </configuration>
             </plugin>
         </plugins>
