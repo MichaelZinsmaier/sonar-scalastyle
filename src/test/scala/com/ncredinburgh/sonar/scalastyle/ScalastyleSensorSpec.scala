@@ -21,132 +21,104 @@ package com.ncredinburgh.sonar.scalastyle
 import java.io.File
 import java.nio.charset.StandardCharsets
 
+import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.collection.JavaConversions.seqAsJavaList
+
 import org.junit.runner.RunWith
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import org.scalastyle._
+import org.mockito.Matchers.any
+import org.mockito.Matchers.anyListOf
+import org.mockito.Matchers.anyString
+import org.mockito.Mockito.never
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.when
+import org.scalastyle.FileSpec
+import org.scalastyle.RealFileSpec
+import org.scalastyle.StyleError
+import org.scalastyle.WarningLevel
 import org.scalastyle.file.FileLengthChecker
-import org.scalastyle.scalariform.{ForBraceChecker, IfBraceChecker}
-import org.scalatest._
+import org.scalastyle.scalariform.ForBraceChecker
+import org.scalastyle.scalariform.IfBraceChecker
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.scalatest.PrivateMethodTester
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.mock.MockitoSugar
-import org.sonar.api.batch.SensorContext
-import org.sonar.api.batch.fs._
-import org.sonar.api.component.ResourcePerspectives
-import org.sonar.api.issue.{Issuable, Issue}
-import org.sonar.api.resources.Project
-import org.sonar.api.rules.{Rule, RuleFinder, RuleQuery}
-import org.sonar.core.issue.DefaultIssueBuilder
-
-import scala.collection.JavaConversions._
-
+import org.sonar.api.batch.fs.internal.DefaultInputFile
+import org.sonar.api.batch.rule.ActiveRule
+import org.sonar.api.batch.rule.ActiveRules
+import org.sonar.api.batch.sensor.internal.SensorContextTester
+import org.sonar.api.rule.RuleKey
 
 @RunWith(classOf[JUnitRunner])
 class ScalastyleSensorSpec extends FlatSpec with Matchers with MockitoSugar with PrivateMethodTester {
 
   trait Fixture {
-    val fs = mock[FileSystem]
-    val predicates = mock[FilePredicates]
-    val project = mock[Project]
     val runner = mock[ScalastyleRunner]
-    val perspective = mock[ResourcePerspectives]
-    val issuable = mock[Issuable]
-    val issueBuilder = new DefaultIssueBuilder().componentKey("foo").projectKey("bar")
-    val rf = mock[RuleFinder]
-    val aRule = Rule.create("repo", "key")
 
-    val testee = new ScalastyleSensor(perspective, runner, fs, rf)
-    val context = mock[SensorContext]
+    val testee = new ScalastyleSensor(runner)
+    
+    val context = spy(SensorContextTester.create(new File("src/test/resources")))
+    
+    // files
+    val offset = Array[Int](1, 5, 10, 16, 20, 25, 39, 50)
+    context.fileSystem()
+      .add(new DefaultInputFile("testProject", "ScalaFile1.scala").setLanguage("scala").setLines(8).setOriginalLineOffsets(offset))
+      .add(new DefaultInputFile("testProject", "ScalaFile2.scala").setLanguage("scala").setLines(8).setOriginalLineOffsets(offset))
+      .setEncoding(StandardCharsets.UTF_8)
+    
+    val scalaFiles = context.fileSystem().inputFiles().map { inputFile => inputFile.file() }.toList  
+      
+    // rules
+    val activeRule = mock[ActiveRule]
+    when(activeRule.ruleKey).thenReturn(mock[RuleKey])
 
-    when(runner.run(anyString, anyListOf(classOf[File]))).thenReturn(List())
-    when(fs.encoding).thenReturn(StandardCharsets.UTF_8)
-    when(fs.predicates()).thenReturn(predicates)
-    when(perspective.as(any(), any(classOf[InputPath]))).thenReturn(issuable)
-    when(issuable.newIssueBuilder()).thenReturn(issueBuilder)
-    when(rf.find(any[RuleQuery])).thenReturn(aRule)
+    val activeRules = mock[ActiveRules]
+    when(activeRules.findByInternalKey(any[String], any[String])).thenReturn(activeRule)
 
-    def mockScalaPredicate(scalaFiles: java.lang.Iterable[File]): Unit= {
-      val scalaFilesPred = mock[FilePredicate]
-      val hasTypePred = mock[FilePredicate]
-      val langPred = mock[FilePredicate]
-      when(predicates.hasType(InputFile.Type.MAIN)).thenReturn(hasTypePred)
-      when(predicates.hasLanguage(Constants.ScalaKey)).thenReturn(langPred)
-      when(predicates.and(hasTypePred, langPred)).thenReturn(scalaFilesPred)
-      when(fs.files(scalaFilesPred)).thenReturn(scalaFiles)
-    }
+    context.setActiveRules(activeRules)
   }
-
-  "A Scalastyle Sensor" should "execute when the project have Scala files" in new Fixture {
-    mockScalaPredicate(List(new File("foo.scala"), new File("bar.scala")))
-
-    testee.shouldExecuteOnProject(project) shouldBe true
-  }
-
-  it should "not execute when there isn't any Scala files" in new Fixture {
-    mockScalaPredicate(List())
-
-    testee.shouldExecuteOnProject(project) shouldBe false
-  }
-
-
 
   it should "analyse all scala source files in project" in new Fixture {
-    val scalaFiles = List(new File("foo.scala"), new File("bar.scala"))
-    mockScalaPredicate(scalaFiles)
-
-    testee.analyse(project, context)
-
+    when(runner.run(anyString, anyListOf(classOf[File]))).thenReturn(List())
+    testee.execute(context)
+    
     verify(runner).run(StandardCharsets.UTF_8.name(), scalaFiles)
   }
 
   it should "not create SonarQube issues when there isn't any scalastyle errors" in new Fixture {
-    mockScalaPredicate(List(new File("foo.scala"), new File("bar.scala")))
     when(runner.run(anyString, anyListOf(classOf[File]))).thenReturn(List())
+    testee.execute(context)
 
-    testee.analyse(project, context)
-
-    verify(issuable, never).addIssue(any[Issue])
+    verify(context, never).newIssue()
   }
 
   it should "report a scalastyle error as a SonarQube issue" in new Fixture {
-    mockScalaPredicate(List(new File("foo.scala"), new File("bar.scala")))
-
     val error = new StyleError[FileSpec](
-      new RealFileSpec("foo.scala", None),
+      new RealFileSpec("ScalaFile1.scala", None),
       classOf[ForBraceChecker],
       "org.scalastyle.scalariform.ForBraceChecker",
       WarningLevel,
       List(),
-      None
-    )
+      Some(7))
+
     when(runner.run(anyString, anyListOf(classOf[File]))).thenReturn(List(error))
+    testee.execute(context)
 
-    testee.analyse(project, context)
-
-    verify(issuable, times(1)).addIssue(any[Issue])
+    verify(context, times(1)).newIssue()
   }
 
   it should "report scalastyle errors as SonarQube issues" in new Fixture {
-    mockScalaPredicate(List(new File("foo.scala"), new File("bar.scala")))
+    val error1 = new StyleError[FileSpec](new RealFileSpec("ScalaFile1.scala", None), classOf[FileLengthChecker],
+      "org.scalastyle.file.FileLengthChecker", WarningLevel, List(), Some(6))
+    val error2 = new StyleError[FileSpec](new RealFileSpec("ScalaFile2.scala", None), classOf[IfBraceChecker],
+      "org.scalastyle.scalariform.IfBraceChecker", WarningLevel, List(), Some(4))
 
-    val error1 = new StyleError[FileSpec](new RealFileSpec("foo.scala", None), classOf[FileLengthChecker],
-      "org.scalastyle.file.FileLengthChecker", WarningLevel, List(), None)
-    val error2 = new StyleError[FileSpec](new RealFileSpec("bar.scala", None), classOf[IfBraceChecker],
-      "org.scalastyle.scalariform.IfBraceChecker", WarningLevel, List(), None)
     when(runner.run(anyString, anyListOf(classOf[File]))).thenReturn(List(error1, error2))
+    testee.execute(context)
 
-    testee.analyse(project, context)
-
-    verify(issuable, times(2)).addIssue(any[Issue])
+    verify(context, times(2)).newIssue()
   }
 
-  it should "find sonar rule for error" in new Fixture {
-    val findSonarRuleForError = PrivateMethod[Rule]('findSonarRuleForError)
-    val error = new StyleError[FileSpec](new RealFileSpec("foo.scala", None), classOf[FileLengthChecker],
-      "org.scalastyle.file.FileLengthChecker", WarningLevel, List(), None)
-
-    val rule = testee invokePrivate findSonarRuleForError(error)
-
-    rule.getKey shouldEqual "key"
-  }
 }

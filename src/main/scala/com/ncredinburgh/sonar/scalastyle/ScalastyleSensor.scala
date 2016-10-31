@@ -18,103 +18,91 @@
  */
 package com.ncredinburgh.sonar.scalastyle
 
-import org.scalastyle._
-import org.sonar.api.utils.log.Loggers
-import org.sonar.api.batch.fs.{InputFile, FileSystem}
-import org.sonar.api.batch.{Sensor, SensorContext}
-import org.sonar.api.component.ResourcePerspectives
-import org.sonar.api.issue.{Issuable, Issue}
+import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.collection.JavaConversions.seqAsJavaList
+
+import org.scalastyle.FileSpec
+import org.scalastyle.Message
+import org.scalastyle.StyleError
+import org.scalastyle.StyleException
+import org.sonar.api.batch.fs.FileSystem
+import org.sonar.api.batch.fs.InputFile
+import org.sonar.api.batch.rule.ActiveRule
+import org.sonar.api.batch.sensor.Sensor
+import org.sonar.api.batch.sensor.SensorContext
+import org.sonar.api.batch.sensor.SensorDescriptor
+import org.sonar.api.batch.sensor.issue.NewIssueLocation
+import org.sonar.api.batch.sensor.issue.internal.DefaultIssueLocation
 import org.sonar.api.profiles.RulesProfile
-import org.sonar.api.resources.Project
-import org.sonar.api.rule.RuleKey
-import org.sonar.api.rules.{Rule, RuleFinder, RuleQuery}
-
-
-import scala.collection.JavaConversions._
+import org.sonar.api.utils.log.Loggers
 
 
 /**
  * Main sensor for return Scalastyle issues to Sonar.
  */
-class ScalastyleSensor(resourcePerspectives: ResourcePerspectives,
-    runner: ScalastyleRunner,
-    fileSystem: FileSystem,
-    ruleFinder: RuleFinder)
-  extends Sensor {
+class ScalastyleSensor(runner: ScalastyleRunner) extends Sensor {
 
-  def this(resourcePerspectives: ResourcePerspectives,
-           rulesProfile: RulesProfile,
-           fileSystem: FileSystem,
-           ruleFinder: RuleFinder) = this(resourcePerspectives, new ScalastyleRunner(rulesProfile), fileSystem, ruleFinder)
+  def this(rulesProfile: RulesProfile, fileSystem: FileSystem) = this(new ScalastyleRunner(rulesProfile))
 
 
   private val log = Loggers.get(classOf[ScalastyleSensor])
 
-  private def predicates = fileSystem.predicates()
-
-  private def scalaFilesPredicate = predicates.and(predicates.hasType(InputFile.Type.MAIN), predicates.hasLanguage(Constants.ScalaKey))
-
-
-  override def shouldExecuteOnProject(project: Project): Boolean = {
-    fileSystem.files(scalaFilesPredicate).nonEmpty
+  private def scalaFilesPredicate(context: SensorContext) = {
+    val predicates = context.fileSystem.predicates
+    predicates.and(predicates.hasType(InputFile.Type.MAIN), predicates.hasLanguage(Constants.ScalaKey))
   }
 
-  override def analyse(project: Project, context: SensorContext): Unit = {
-    val files = fileSystem.files(scalaFilesPredicate)
-    val encoding = fileSystem.encoding.name
+
+  override def execute(context: SensorContext): Unit = {
+    val files = context.fileSystem.files(scalaFilesPredicate(context))
+    val encoding = context.fileSystem.encoding.name
     val messages = runner.run(encoding, files.toList)
 
-    messages foreach (processMessage(_))
+    messages foreach (processMessage(_, context))
   }
+  
+  override def describe(descriptor: SensorDescriptor): Unit =  {
+    descriptor
+      .name(Constants.ProfileName)
+      .onlyOnLanguage(Constants.ScalaKey)
+      .createIssuesForRuleRepositories(Constants.RepositoryKey)
+  }  
 
-  private def processMessage(message: Message[FileSpec]): Unit = message match {
-    case error: StyleError[FileSpec] => processError(error)
+  private def processMessage(message: Message[FileSpec], context: SensorContext): Unit = message match {
+    case error: StyleError[FileSpec] => processError(error, context)
     case exception: StyleException[FileSpec] => processException(exception)
     case _ => Unit
   }
 
-  private def processError(error: StyleError[FileSpec]): Unit = {
+  private def processError(error: StyleError[FileSpec], context: SensorContext): Unit = {
     log.debug("Error message for rule " + error.clazz.getName)
 
-    val inputFile = fileSystem.inputFile(predicates.hasPath(error.fileSpec.name))
-    val issuable = Option(resourcePerspectives.as(classOf[Issuable], inputFile))
-    val rule = findSonarRuleForError(error)
+    val rule = findSonarRuleForError(error, context)
+    val location = findLocation(error, context)
+    
+    context.newIssue()
+      .forRule(rule.ruleKey())
+      .at(location)
+      .save()
 
     log.debug("Matched to sonar rule " + rule)
-
-    if (issuable.isDefined) {
-      addIssue(issuable.get, error, rule)
-    } else {
-      log.error("issuable is null, cannot add issue")
-    }
   }
 
-  private def addIssue(issuable: Issuable, error: StyleError[FileSpec], rule: Rule): Unit = {
-    val lineNum = sanitiseLineNum(error.lineNumber)
-    val messageStr = error.customMessage getOrElse rule.getName
-
-    val issue: Issue = issuable.newIssueBuilder.ruleKey(rule.ruleKey)
-      .line(lineNum).message(messageStr).build
-    issuable.addIssue(issue)
+  private def findLocation(error: StyleError[FileSpec], context: SensorContext): NewIssueLocation = {
+    val inputFile = context.fileSystem.inputFile(context.fileSystem.predicates.hasPath(error.fileSpec.name))
+    val line = inputFile.selectLine(error.lineNumber.get)
+        
+    new DefaultIssueLocation().on(inputFile).at(line)
   }
 
-  private def findSonarRuleForError(error: StyleError[FileSpec]): Rule = {
-    val key = Constants.RepositoryKey
-    val errorKey = error.key // == scalastyle ConfigurationChecker.customId 
-    log.debug("Looking for sonar rule for " + errorKey)
-    ruleFinder.find(RuleQuery.create.withKey(errorKey).withRepositoryKey(key))
+  private def findSonarRuleForError(error: StyleError[FileSpec], context: SensorContext): ActiveRule = {
+    val key = error.key // == scalastyle ConfigurationChecker.customId 
+    log.debug("Looking for sonar rule for " + key)
+    context.activeRules().findByInternalKey(Constants.RepositoryKey, key)
   }
 
   private def processException(exception: StyleException[FileSpec]): Unit = {
     log.error("Got exception message from Scalastyle. " +
       "Check you have valid parameters configured for all rules. Exception message was: " + exception.message)
-  }
-
-  // sonar claims to accept null or a non zero lines, however if it is passed
-  // null it blows up at runtime complaining it was passed 0
-  private def sanitiseLineNum(maybeLine: Option[Int]) = if ((maybeLine getOrElse 0) != 0) {
-    maybeLine.get
-  } else {
-    1
   }
 }
