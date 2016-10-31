@@ -22,16 +22,13 @@
     </licenses>
 
     <properties>
-        <sonar.version>5.6</sonar.version>
+        <sonar.version>6.1</sonar.version>
         <sonar.pluginKey>Scalastyle</sonar.pluginKey>
         <sonar.pluginName>Scalastyle</sonar.pluginName>
         <sonar.pluginClass>com.ncredinburgh.sonar.scalastyle.ScalastylePlugin</sonar.pluginClass>
 
         <scala.version>2.11.8</scala.version>
         <scala.major.version>2.11</scala.major.version>
-
-        <!-- needed? -->
-        <sonar.language>scala</sonar.language>
     </properties>
 
     <dependencies>
