@@ -41,8 +41,6 @@ class ScalastyleQualityProfile(ruleFinder: RuleFinder) extends ProfileDefinition
     val enabledRules = defaultConfigRules filter (x => (x \ "@enabled").text.equals("true"))
     val defaultRuleClasses = enabledRules map (x => (x \ "@class").text)
 
-    // currently findAll is buggy (sonar 4.5-5.1 https://jira.sonarsource.com/browse/SONAR-6390)
-    // will still work but won't add all possible rule to the default profile
     val query = RuleQuery.create().withRepositoryKey(Constants.RepositoryKey)
     val repoRules = ruleFinder.findAll(query)
 
