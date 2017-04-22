@@ -50,6 +50,10 @@ import org.sonar.api.batch.rule.ActiveRule
 import org.sonar.api.batch.rule.ActiveRules
 import org.sonar.api.batch.sensor.internal.SensorContextTester
 import org.sonar.api.rule.RuleKey
+import java.nio.file.Path
+import org.sonar.api.batch.fs.internal.DefaultIndexedFile
+import java.nio.file.FileSystems
+import org.sonar.api.batch.fs.internal.TestInputFileBuilder
 
 @RunWith(classOf[JUnitRunner])
 class ScalastyleSensorSpec extends FlatSpec with Matchers with MockitoSugar with PrivateMethodTester {
@@ -60,12 +64,20 @@ class ScalastyleSensorSpec extends FlatSpec with Matchers with MockitoSugar with
     val testee = new ScalastyleSensor(runner)
     
     val context = spy(SensorContextTester.create(new File("src/test/resources")))
+    val modulePath = FileSystems.getDefault().getPath("src/test/resources");
     
-    // files
+    // files   
     val offset = Array[Int](1, 5, 10, 16, 20, 25, 39, 50)
+    
+    def fileBuilder(file: String) =
+      new TestInputFileBuilder("testProject", file)
+        .setLanguage("scala")
+        .setLines(8)
+        .setOriginalLineOffsets(offset)        
+           
     context.fileSystem()
-      .add(new DefaultInputFile("testProject", "ScalaFile1.scala").setLanguage("scala").setLines(8).setOriginalLineOffsets(offset))
-      .add(new DefaultInputFile("testProject", "ScalaFile2.scala").setLanguage("scala").setLines(8).setOriginalLineOffsets(offset))
+      .add(fileBuilder("ScalaFile1.scala").build())
+      .add(fileBuilder("ScalaFile2.scala").build())
       .setEncoding(StandardCharsets.UTF_8)
     
     val scalaFiles = context.fileSystem().inputFiles().map { inputFile => inputFile.file() }.toList  

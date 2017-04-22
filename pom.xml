@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+  https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  
+  <modelVersion>4.0.0</modelVersion>
     <groupId>com.ncredinburgh</groupId>
     <artifactId>sonar-scalastyle</artifactId>
     <version>0.0.4-SNAPSHOT</version>
@@ -22,7 +24,7 @@
     </licenses>
 
     <properties>
-        <sonar.version>6.1</sonar.version>
+        <sonar.version>6.3</sonar.version>
         <sonar.pluginKey>Scalastyle</sonar.pluginKey>
         <sonar.pluginName>Scalastyle</sonar.pluginName>
         <sonar.pluginClass>com.ncredinburgh.sonar.scalastyle.ScalastylePlugin</sonar.pluginClass>
@@ -33,7 +35,7 @@
 
     <dependencies>
 
-
+		<!-- Sonar -->
         <dependency>
             <groupId>org.sonarsource.sonarqube</groupId>
             <artifactId>sonar-plugin-api</artifactId>
@@ -41,12 +43,22 @@
             <scope>provided</scope>
         </dependency>
 
+		<!-- Scala -->
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
         </dependency>
 
+		<!-- Annotations used in soar api. Warnings during compilation if not present -->
+		<dependency>
+		    <groupId>com.google.code.findbugs</groupId>
+		    <artifactId>jsr305</artifactId>
+		    <version>3.0.0</version>
+		    <scope>provided</scope>
+		</dependency>
+
+		<!-- Scalastyle -->
         <dependency>
             <groupId>org.scalastyle</groupId>
             <artifactId>scalastyle_${scala.major.version}</artifactId>
@@ -60,17 +72,12 @@
         </dependency>
 
         <!-- unit tests -->
+        
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.major.version}</artifactId>
-            <version>2.2.5</version>
+            <version>3.0.2</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.scala-lang</groupId>
-                    <artifactId>scala-library</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -83,17 +90,9 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.12</version>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.sonarsource.sonarqube</groupId>
-            <artifactId>sonar-core</artifactId>
-            <version>${sonar.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -133,6 +132,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.20</version>
                 <configuration>
                     <includes>
                         <include>**/*Spec.java</include>
@@ -142,7 +142,7 @@
             <plugin>
                 <groupId>org.sonarsource.sonar-packaging-maven-plugin</groupId>
                 <artifactId>sonar-packaging-maven-plugin</artifactId>
-                <version>1.16</version>
+                <version>1.18.0.372</version>
                 <extensions>true</extensions>
                 <configuration>
                      <pluginClass>${sonar.pluginClass}</pluginClass>
