@@ -51,8 +51,8 @@ class ScalastyleRepository extends RulesDefinition {
 
           // define the rule
           val rule = repository.createRule(ruleKey)
-          rule.setName(ScalastyleResources.label(repoRule.id))
-          rule.setHtmlDescription(repoRule.description)
+            .setName(ScalastyleResources.label(repoRule.id))
+            .setHtmlDescription(repoRule.description)
 
           // currently all rules comes with "warning" default level so we can treat with major severity
           rule.setSeverity(Severity.MAJOR)

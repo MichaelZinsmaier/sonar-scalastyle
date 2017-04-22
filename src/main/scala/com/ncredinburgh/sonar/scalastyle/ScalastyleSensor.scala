@@ -35,6 +35,7 @@ import org.sonar.api.batch.sensor.issue.NewIssueLocation
 import org.sonar.api.batch.sensor.issue.internal.DefaultIssueLocation
 import org.sonar.api.profiles.RulesProfile
 import org.sonar.api.utils.log.Loggers
+import org.sonar.api.rule.RuleKey
 
 
 /**
@@ -98,7 +99,8 @@ class ScalastyleSensor(runner: ScalastyleRunner) extends Sensor {
   private def findSonarRuleForError(error: StyleError[FileSpec], context: SensorContext): ActiveRule = {
     val key = error.key // == scalastyle ConfigurationChecker.customId 
     log.debug("Looking for sonar rule for " + key)
-    context.activeRules().findByInternalKey(Constants.RepositoryKey, key)
+
+    context.activeRules().find(RuleKey.of(Constants.RepositoryKey, key))
   }
 
   private def processException(exception: StyleException[FileSpec]): Unit = {

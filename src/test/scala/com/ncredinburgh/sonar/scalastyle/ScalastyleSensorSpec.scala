@@ -87,7 +87,7 @@ class ScalastyleSensorSpec extends FlatSpec with Matchers with MockitoSugar with
     when(activeRule.ruleKey).thenReturn(mock[RuleKey])
 
     val activeRules = mock[ActiveRules]
-    when(activeRules.findByInternalKey(any[String], any[String])).thenReturn(activeRule)
+    when(activeRules.find(any[RuleKey])).thenReturn(activeRule)
 
     context.setActiveRules(activeRules)
   }
