@@ -91,9 +91,16 @@ class ScalastyleSensor(runner: ScalastyleRunner) extends Sensor {
 
   private def findLocation(error: StyleError[FileSpec], context: SensorContext): NewIssueLocation = {
     val inputFile = context.fileSystem.inputFile(context.fileSystem.predicates.hasPath(error.fileSpec.name))
-    val line = inputFile.selectLine(error.lineNumber.get)
-        
-    new DefaultIssueLocation().on(inputFile).at(line)
+    
+    error.lineNumber match {
+      case Some(nr) => {       
+        val line = inputFile.selectLine(nr)
+        new DefaultIssueLocation().on(inputFile).at(line)
+      }
+      case None => {
+        new DefaultIssueLocation().on(inputFile)
+      }
+    }   
   }
 
   private def findSonarRuleForError(error: StyleError[FileSpec], context: SensorContext): ActiveRule = {
