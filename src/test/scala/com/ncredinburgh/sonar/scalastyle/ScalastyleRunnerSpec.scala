@@ -26,7 +26,7 @@ import org.mockito.Mockito._
 import org.scalastyle._
 import org.scalastyle.StyleError
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{FlatSpec, Matchers, PrivateMethodTester}
 import org.sonar.api.profiles.RulesProfile
 import org.sonar.api.rules.{Rule, RulePriority}

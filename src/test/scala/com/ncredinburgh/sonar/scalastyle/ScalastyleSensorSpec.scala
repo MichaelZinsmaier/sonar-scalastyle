@@ -44,7 +44,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.PrivateMethodTester
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.sonar.api.batch.fs.internal.DefaultInputFile
 import org.sonar.api.batch.rule.ActiveRule
 import org.sonar.api.batch.rule.ActiveRules
