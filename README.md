@@ -1,3 +1,18 @@
+# dev branch
+
+Updates SonarQube version to 6.3
+working
+
+    templates & rules
+
+known issues
+
+    default profile generation is deprecated
+    might have to drop that
+
+
+# original document
+
 [![Build Status](https://travis-ci.org/NCR-CoDE/sonar-scalastyle.svg?branch=master)](https://travis-ci.org/NCR-CoDE/sonar-scalastyle)
 
 # Sonar Scalastyle Plugin
